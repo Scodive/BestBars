@@ -109,7 +109,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let top50Data = []; // This will hold the loaded or initialized bar data
 
     function saveCalendarData() {
-        localStorage.setItem('calendarData', JSON.stringify(calendarData));
+        try {
+            localStorage.setItem('calendarData', JSON.stringify(calendarData));
+        } catch (e) {
+            if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014 /* Firefox */) {
+                console.error("Error saving to localStorage: Quota exceeded!", e);
+                alert("存储空间不足！localStorage 已满。请尝试删除一些旧的日历记录，或减少单个记录中的图片数量/大小后再试。");
+            } else {
+                console.error("Error saving to localStorage: ", e);
+                alert("保存数据时发生未知错误，请检查控制台获取更多信息。");
+            }
+            // 可选：可以考虑是否要抛出错误，或者返回一个状态，让调用者知道保存失败
+        }
     }
 
     function applyBackgroundStyle(index) {
@@ -276,7 +287,45 @@ document.addEventListener('DOMContentLoaded', () => {
             const filePromises = Array.from(files).map(file => {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onload = (e) => {
+                        const originalBase64 = e.target.result;
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+
+                            const MAX_WIDTH = 1024;
+                            const MAX_HEIGHT = 1024;
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > height) {
+                                if (width > MAX_WIDTH) {
+                                    height *= MAX_WIDTH / width;
+                                    width = MAX_WIDTH;
+                                }
+                            } else {
+                                if (height > MAX_HEIGHT) {
+                                    width *= MAX_HEIGHT / height;
+                                    height = MAX_HEIGHT;
+                                }
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            // 使用JPEG格式进行压缩，0.7表示70%的质量
+                            const resizedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                            resolve(resizedBase64);
+                        };
+                        img.onerror = (err) => {
+                            console.error("Image load error for resizing: ", err);
+                            // 如果图片加载失败，仍然尝试返回原始图片，或者可以reject
+                            // 为简单起见，这里返回原始的，但更好的做法是通知用户图片处理失败
+                            resolve(originalBase64); 
+                        };
+                        img.src = originalBase64;
+                    };
                     reader.onerror = (e) => reject(e);
                     reader.readAsDataURL(file);
                 });
@@ -289,11 +338,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (tempUploadedImages.length > 0) {
                     modalImagePreview.src = tempUploadedImages[0];
                     modalImagePreview.style.display = 'block';
-                    modalImageCountIndicator.textContent = `已选择 ${tempUploadedImages.length} 张图片`;
+                    modalImageCountIndicator.textContent = `已选择 ${tempUploadedImages.length} 张图片 (已优化)`;
                 }
             } catch (error) {
-                console.error("Error reading files: ", error);
-                modalImageCountIndicator.textContent = '图片读取失败';
+                console.error("Error reading and processing files: ", error);
+                modalImageCountIndicator.textContent = '图片处理失败';
                 tempUploadedImages = []; // Clear on error
             }
         } else {
@@ -549,30 +598,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Leaflet Map Logic ---
     function initializeTop50Map() {
-        if (!mapContainer || mapContainer.style.display === 'none') {
-            return; 
-        }
-
-        if (top50Map && typeof top50Map.getContainer === 'function' && top50Map.getContainer()) { 
-            updateMapMarkers(); 
+        console.log("Attempting to initialize Top 50 map.");
+        if (!mapContainer) {
+            console.error("Map container not found");
             return;
         }
-        
-        try {
-            console.log("Initializing map in container:", mapContainer);
-            top50Map = L.map(mapContainer).setView([20, 115], 3); 
 
-            L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}{r}.png', {
-                attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                subdomains: 'abcd',
-                maxZoom: 19,
-                minZoom: 2
-            }).addTo(top50Map);
+        // Ensure map container is visible and has a size *before* initializing the map
+        // This is typically handled by setActivePage, but we can double check here.
+        if (mapContainer.offsetParent === null) { // Checks if the element or its parents are hidden
+             console.warn("Map container is not visible. Map might not render correctly if initialized now.");
+            // Consider deferring initialization or ensuring it's visible via setActivePage first.
+            // For now, we'll proceed, but this could be an issue.
+        }
+        
+        if (top50Map) { // If map already exists, just invalidate size and update markers
+            console.log("Map already initialized. Invalidating size and updating markers.");
+            top50Map.invalidateSize();
             updateMapMarkers();
-            console.log("Map initialized successfully.");
-        } catch (e) {
-            console.error("Error initializing Leaflet map:", e);
-            if(mapContainer) mapContainer.innerHTML = '<p style="color: red; text-align: center; padding-top: 20px;">地图加载失败，请检查浏览器控制台获取更多信息。</p>';
+            return;
+        }
+
+        console.log("Initializing new map instance.");
+        try {
+            top50Map = L.map(mapContainer).setView([20, 110], 3); // Default view
+
+            L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png', {
+                maxZoom: 18,
+                attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+                subdomains: 'abcd' // Not strictly necessary for Stadia, but good practice for some tile servers
+            }).addTo(top50Map);
+
+            console.log("Map initialized and tileLayer added.");
+            updateMapMarkers(); // Add initial markers
+
+        } catch (error) {
+            console.error("Error initializing Leaflet map:", error);
+            mapContainer.innerHTML = '<p style="color:red; text-align:center; padding: 20px;">地图加载失败，请检查浏览器控制台获取更多信息。</p>';
         }
     }
 
