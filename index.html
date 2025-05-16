@@ -6,31 +6,68 @@
     <title>鸡尾酒与酒吧日历</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS for map (will be used later) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <div class="month-navigation">
-                <button id="prev-month" class="nav-button">&lt;</button>
-                <h1 id="month-year"></h1>
-                <button id="next-month" class="nav-button">&gt;</button>
+<body class="bg-style-default"> {/* Apply default background */}
+
+    <nav class="main-navigation">
+        <button id="nav-calendar" class="nav-tab active-tab">每月打卡</button>
+        <button id="nav-top50" class="nav-tab">亚洲 Top 50 酒吧</button>
+    </nav>
+
+    <div id="calendar-page" class="page-content active-page">
+        <div class="container">
+            <header>
+                <div class="month-navigation">
+                    <button id="prev-month" class="nav-button">&lt;</button>
+                    <h1 id="month-year"></h1>
+                    <button id="next-month" class="nav-button">&gt;</button>
+                </div>
+                <div class="header-actions-right">
+                    <button id="toggle-background-button" class="header-action-button">切换背景</button>
+                    <button id="clear-all-button" class="header-action-button danger-button">全部清空</button>
+                </div>
+            </header>
+            <div class="weekday-header-grid">
+                <div>一</div>
+                <div>二</div>
+                <div>三</div>
+                <div>四</div>
+                <div>五</div>
+                <div>六</div>
+                <div>日</div>
             </div>
-            <button id="clear-all-button" class="header-action-button danger-button">全部清空</button>
-        </header>
-        <div class="weekday-header-grid">
-            <div>一</div>
-            <div>二</div>
-            <div>三</div>
-            <div>四</div>
-            <div>五</div>
-            <div>六</div>
-            <div>日</div>
-        </div>
-        <div id="calendar-grid" class="calendar-grid">
-            <!-- 日历格子将由 JavaScript 动态生成 -->
+            <div id="calendar-grid" class="calendar-grid">
+                {/* 日历格子将由 JavaScript 动态生成 */}
+            </div>
         </div>
     </div>
 
+    <div id="top50-page" class="page-content">
+        <div class="container">
+            <header class="top50-header">
+                <h1>亚洲 TOP 50 酒吧</h1>
+                <div id="top50-stats">
+                    已打卡: <span id="top50-checked-count">0</span> / 50 (剩余: <span id="top50-remaining-count">50</span>)
+                </div>
+            </header>
+            <div class="top50-controls">
+                <button id="generate-share-button" class="action-button" style="background-color: #c0a062; color: #222; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin-bottom:20px;">生成分享卡片</button>
+                {/* Map toggle might be added here later */}
+            </div>
+            <div id="top50-list-container" class="top50-list">
+                {/* 酒吧列表将由 JavaScript 动态生成 */}
+            </div>
+            <div id="top50-map-container" style="height: 400px; width: 100%; margin-top: 20px; display: none; border-radius: 8px; background-color: #333;">
+                {/* 地图将在这里渲染 */}
+            </div>
+        </div>
+    </div>
+
+    {/* Modals remain the same, they are global */}
     <div id="entry-modal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -38,7 +75,8 @@
             <div class="modal-body">
                 <div class="modal-image-container">
                     <img id="modal-image-preview" src="#" alt="上传的图片" style="display:none;">
-                    <input type="file" id="modal-image-upload" accept="image/*">
+                    <p id="modal-image-count-indicator" style="font-size: 0.8em; color: #aaa; text-align: center; margin-top: -10px; margin-bottom: 10px;"></p>
+                    <input type="file" id="modal-image-upload" accept="image/*" multiple>
                     <label for="modal-image-upload" class="upload-label">上传图片</label>
                 </div>
                 <input type="text" id="modal-bar-name" placeholder="酒吧名称">
@@ -54,7 +92,7 @@
         <div class="modal-content">
             <span class="close-button">&times;</span>
             <h2 id="details-modal-date"></h2>
-            <img id="details-modal-image" src="#" alt="酒吧图片" style="max-width: 100%; height: auto; margin-bottom: 15px;">
+            <div id="details-modal-images-container"></div>
             <h3 id="details-modal-bar-name"></h3>
             <p id="details-modal-bar-location"></p>
             <p><strong>描述:</strong></p>
@@ -64,7 +102,27 @@
             <button id="delete-entry-button" class="modal-delete-button">删除记录</button>
         </div>
     </div>
+    
+    <div id="share-card-modal" class="modal share-modal">
+        <div class="modal-content share-card-content" style="max-width: 700px;">
+            <span class="close-button share-close-button">&times;</span>
+            <div id="share-card-render-area">
+                <h2 style="text-align:center; color: #e0c082; margin-bottom: 20px;">我的亚洲 Top 50 酒吧之旅</h2>
+                <div id="share-card-bars-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
+                    {/* Visited bars will be dynamically inserted here */}
+                </div>
+                <p class="share-card-footer" style="text-align:center; margin-top:30px; font-size:0.8em; color: #aaa;">由 Cocktail Calendar & Bar Tracker 生成</p>
+            </div>
+             <button id="download-share-card" class="action-button" style="background-color: #c0a062; color: #222; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin-top:20px; display:block; width: fit-content; margin-left:auto; margin-right:auto;">下载分享图片</button>
+        </div>
+    </div>
 
+
+    <!-- Leaflet JS (must be after CSS and map container) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> {* Added html2canvas for download *}}
     <script src="script.js"></script>
 </body>
 </html> 
