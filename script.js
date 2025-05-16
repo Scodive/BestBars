@@ -283,7 +283,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     saveEntryButton.addEventListener('click', () => {
-        if (!currentEditingDate) return;
+        console.log("Save button clicked. currentEditingDate:", currentEditingDate);
+        if (!currentEditingDate) {
+            console.error("Cannot save, currentEditingDate is null!");
+            return;
+        }
         const dateToSave = currentEditingDate;
 
         let imagesToSave = [];
@@ -304,13 +308,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Only save/update if there's meaningful data or any images
         if (entryData.barName || entryData.barLocation || entryData.description || entryData.cocktail || (entryData.images && entryData.images.length > 0)) {
             calendarData[dateToSave] = entryData;
+            console.log(`Entry for ${dateToSave} saved/updated in calendarData.`);
         } else {
             if (calendarData[dateToSave]) { 
                 delete calendarData[dateToSave];
+                console.log(`Entry for ${dateToSave} deleted from calendarData.`);
             }
         }
         
         saveCalendarData();
+        console.log("Calendar data after save in saveEntryButton:", JSON.parse(JSON.stringify(calendarData)));
         renderCalendar();
         entryModal.style.display = 'none';
         tempUploadedImages = []; // 清空暂存
@@ -373,16 +380,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Navigation Logic ---
     function setActivePage(pageId) {
-        document.querySelectorAll('.page-content').forEach(page => page.classList.remove('active-page'));
+        document.querySelectorAll('.page-content').forEach(page => {
+            page.classList.remove('active-page');
+            // Explicitly manage display none/flex for page content based on active status
+            // This helps if the .active-page CSS has display:flex and default is display:none
+            if(page.id !== pageId) page.style.display = 'none'; 
+        });
         document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active-tab'));
         
-        document.getElementById(pageId).classList.add('active-page');
+        const pageToShow = document.getElementById(pageId);
+        if (pageToShow) {
+            pageToShow.classList.add('active-page');
+            pageToShow.style.display = 'flex'; // Assuming .active-page or .page-content uses flex for centering
+        }
+
         if (pageId === 'calendar-page') {
             navCalendarButton.classList.add('active-tab');
+            if (mapContainer) mapContainer.style.display = 'none'; // Hide map when on calendar page
         } else if (pageId === 'top50-page') {
             navTop50Button.classList.add('active-tab');
-            renderTop50List(); // Render the list when this page becomes active
-            initializeTop50Map(); // Initialize map when page is active
+            renderTop50List(); 
+            if (mapContainer) { 
+                mapContainer.style.display = 'block'; 
+                initializeTop50Map(); 
+            }
+        } else {
+            if (mapContainer) mapContainer.style.display = 'none';
         }
     }
     navCalendarButton.addEventListener('click', () => setActivePage('calendar-page'));
@@ -507,46 +530,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Leaflet Map Logic ---
     function initializeTop50Map() {
-        // If map container is not visible and map not yet initialized, proceed.
-        // If map already initialized and container visible, just update markers.
-        if (mapContainer.style.display === 'none') {
-            if (!top50Map) { // Only proceed to full init if map doesn't exist
-                mapContainer.style.display = 'block';
-            } else { // Map exists but container was hidden, just show and update
-                mapContainer.style.display = 'block';
-                updateMapMarkers();
-                return;
-            }
-        } else {
-             // Container is visible
-            if (top50Map) { // Map already initialized and visible, just update
-                updateMapMarkers();
-                return;
-            } 
-            // else: container visible, map not initialized (should be caught by first block if display none)
+        if (!mapContainer || mapContainer.style.display === 'none') {
+            return; 
         }
-        
-        // Guard against no container (though unlikely if we reach here after above logic)
-        if (!mapContainer) return;
 
-        // If map instance already exists (e.g. from a previous call that didn't fully exit), do nothing more than ensure markers are up to date.
-        // This check is slightly redundant with the top ones but provides an additional safeguard.
-        if (top50Map && top50Map.getContainer()) {
-            updateMapMarkers();
+        if (top50Map && typeof top50Map.getContainer === 'function' && top50Map.getContainer()) { 
+            updateMapMarkers(); 
             return;
         }
+        
+        try {
+            console.log("Initializing map in container:", mapContainer);
+            top50Map = L.map(mapContainer).setView([20, 115], 3); 
 
-        // Fallback, ensure display is block if we decided to initialize
-        mapContainer.style.display = 'block';
-
-        top50Map = L.map(mapContainer).setView([20, 115], 3);
-
-        L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}{r}.png', {
-            attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            subdomains: 'abcd',
-            maxZoom: 19
-        }).addTo(top50Map);
-        updateMapMarkers();
+            L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}{r}.png', {
+                attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                subdomains: 'abcd',
+                maxZoom: 19,
+                minZoom: 2
+            }).addTo(top50Map);
+            updateMapMarkers();
+            console.log("Map initialized successfully.");
+        } catch (e) {
+            console.error("Error initializing Leaflet map:", e);
+            if(mapContainer) mapContainer.innerHTML = '<p style="color: red; text-align: center; padding-top: 20px;">地图加载失败，请检查浏览器控制台获取更多信息。</p>';
+        }
     }
 
     function updateMapMarkers() {
