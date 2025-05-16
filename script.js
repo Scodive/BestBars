@@ -245,33 +245,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    modalImageUpload.addEventListener('change', (event) => {
+    modalImageUpload.addEventListener('change', async (event) => {
         const files = event.target.files;
-        tempUploadedImages = []; // 每次选择都重置临时图片数组
+        tempUploadedImages = []; 
         modalImagePreview.style.display = 'none';
         modalImageCountIndicator.textContent = '';
 
         if (files.length > 0) {
-            // Display first image as preview
-            const readerPreview = new FileReader();
-            readerPreview.onload = (e) => {
-                modalImagePreview.src = e.target.result;
-                modalImagePreview.style.display = 'block';
-            }
-            readerPreview.readAsDataURL(files[0]);
+            modalImageCountIndicator.textContent = `正在处理 ${files.length} 张图片...`;
 
-            if (files.length > 0) {
-                modalImageCountIndicator.textContent = `已选择 ${files.length} 张图片`;
-            }
-
-            // Convert all selected files to base64 and store in tempUploadedImages
-            Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    tempUploadedImages.push(e.target.result);
-                }
-                reader.readAsDataURL(file);
+            const filePromises = Array.from(files).map(file => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = (e) => reject(e);
+                    reader.readAsDataURL(file);
+                });
             });
+
+            try {
+                const base64Strings = await Promise.all(filePromises);
+                tempUploadedImages = base64Strings;
+                
+                if (tempUploadedImages.length > 0) {
+                    modalImagePreview.src = tempUploadedImages[0];
+                    modalImagePreview.style.display = 'block';
+                    modalImageCountIndicator.textContent = `已选择 ${tempUploadedImages.length} 张图片`;
+                }
+            } catch (error) {
+                console.error("Error reading files: ", error);
+                modalImageCountIndicator.textContent = '图片读取失败';
+                tempUploadedImages = []; // Clear on error
+            }
+        } else {
+            tempUploadedImages = []; // Also clear if no files selected
         }
     });
 
@@ -500,19 +507,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Leaflet Map Logic ---
     function initializeTop50Map() {
-        if (top50Map || !mapContainer || mapContainer.style.display === 'none') {
-             // If map already initialized, or container not visible, do nothing or just update markers
-            if (top50Map && mapContainer.style.display !== 'none') updateMapMarkers();
-            return;
+        // If map container is not visible and map not yet initialized, proceed.
+        // If map already initialized and container visible, just update markers.
+        if (mapContainer.style.display === 'none') {
+            if (!top50Map) { // Only proceed to full init if map doesn't exist
+                mapContainer.style.display = 'block';
+            } else { // Map exists but container was hidden, just show and update
+                mapContainer.style.display = 'block';
+                updateMapMarkers();
+                return;
+            }
+        } else {
+             // Container is visible
+            if (top50Map) { // Map already initialized and visible, just update
+                updateMapMarkers();
+                return;
+            } 
+            // else: container visible, map not initialized (should be caught by first block if display none)
         }
         
-        // Show map container if it was hidden
+        // Guard against no container (though unlikely if we reach here after above logic)
+        if (!mapContainer) return;
+
+        // If map instance already exists (e.g. from a previous call that didn't fully exit), do nothing more than ensure markers are up to date.
+        // This check is slightly redundant with the top ones but provides an additional safeguard.
+        if (top50Map && top50Map.getContainer()) {
+            updateMapMarkers();
+            return;
+        }
+
+        // Fallback, ensure display is block if we decided to initialize
         mapContainer.style.display = 'block';
 
-        top50Map = L.map(mapContainer).setView([20, 115], 3); // Centered roughly over Asia, adjust zoom
+        top50Map = L.map(mapContainer).setView([20, 115], 3);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { // Using a dark theme map
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}{r}.png', {
+            attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             subdomains: 'abcd',
             maxZoom: 19
         }).addTo(top50Map);
@@ -521,7 +551,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateMapMarkers() {
         if (!top50Map) return;
-        // Clear existing markers
         top50Map.eachLayer(layer => {
             if (layer instanceof L.Marker) {
                 top50Map.removeLayer(layer);
@@ -530,20 +559,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         top50Data.forEach(bar => {
             if (bar.lat && bar.lng) {
-                const markerColor = bar.checked ? 'gold' : 'royalblue'; // Different color for checked-in
-                // Simple custom icon using SVG for better styling
-                const svgIconHtml = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="${markerColor}"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+                const isChecked = bar.checked;
+                const color = isChecked ? '#DAA520' : '#6495ED'; // Gold for checked, CornflowerBlue for unchecked
+                const pinSVG = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32">
+                        <path fill="${color}" d="M12 2C8.13401 2 5 5.13401 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13401 15.866 2 12 2Z"/>
+                        <circle cx="12" cy="9" r="3" fill="white"/>
+                        ${isChecked ? '<circle cx="12" cy="9" r="1.5" fill="#A0522D"/>' : ''} {/* Sienna dot for checked */}
+                    </svg>`;
+                
                 const customIcon = L.divIcon({
-                    html: svgIconHtml,
-                    className: 'custom-map-marker',
-                    iconSize: [28, 28],
-                    iconAnchor: [14, 28], // point of the icon which will correspond to marker's location
-                    popupAnchor: [0, -28] // point from which the popup should open relative to the iconAnchor
+                    html: pinSVG,
+                    className: 'custom-map-marker', // Ensure this class has transparent bg and no border in CSS
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32],
+                    popupAnchor: [0, -32]
                 });
 
                 L.marker([bar.lat, bar.lng], {icon: customIcon})
                  .addTo(top50Map)
-                 .bindPopup(`<b>${bar.name}</b><br>${bar.city}${bar.checked ? '<br>✓ 已打卡' : ''}`);
+                 .bindPopup(`<b>${bar.name}</b><br>${bar.city}${isChecked ? '<br><span style="color: #DAA520;">✓ 已打卡</span>' : ''}`);
             }
         });
     }
