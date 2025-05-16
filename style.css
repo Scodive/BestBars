@@ -30,11 +30,17 @@ header {
     border-bottom: 1px solid #c0a062; /* Soft gold accent */
 }
 
+.month-navigation {
+    display: flex;
+    align-items: center;
+}
+
 #month-year {
     font-size: 2.5em;
     color: #e0c082; /* Soft gold */
     font-weight: 300;
     letter-spacing: 2px;
+    margin: 0 20px; /* Add margin to separate from buttons */
 }
 
 .nav-button {
@@ -53,6 +59,24 @@ header {
     color: #222;
 }
 
+.weekday-header-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px; /* 与日历格子间隙一致 */
+    margin-bottom: 10px; /* 与下方日历的间距 */
+    padding: 0 10px; /* 轻微调整以对齐 */
+}
+
+.weekday-header-grid > div {
+    text-align: center;
+    font-weight: bold;
+    color: #e0c082; /* Soft gold, consistent with day numbers */
+    padding: 8px 0;
+    font-size: 0.9em;
+    border-radius: 4px; /* Optional: subtle rounding */
+    background-color: #2a2a2a; /* Slightly different from day cells for distinction */
+}
+
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -61,7 +85,7 @@ header {
 
 .calendar-day {
     background-color: #333;
-    min-height: 150px;
+    min-height: 160px;
     border-radius: 8px;
     padding: 10px;
     box-sizing: border-box;
@@ -114,7 +138,7 @@ header {
 
 .calendar-day.has-entry .day-image-thumbnail {
     width: 100%;
-    height: 100px; /* Adjust as needed */
+    height: 110px;
     object-fit: cover;
     border-radius: 4px;
     margin-bottom: 5px;
@@ -276,13 +300,26 @@ header {
     background-color: #c9302c;
 }
 
-.footer-actions {
-    text-align: center;
-    margin-top: 30px;
+.header-action-button.danger-button {
+    background-color: transparent; /* 透明背景 */
+    color: #c0a062; /* 柔和金色文字 */
+    border: 1px solid #c0a062; /* 柔和金色边框 */
+    padding: 8px 15px;
+    font-size: 0.9em;
+    font-weight: normal; /* 不用太粗 */
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
 }
 
+.header-action-button.danger-button:hover {
+    background-color: #c0a062; /* 悬停时金色背景 */
+    color: #222; /* 深色文字 */
+}
+
+/* 保留一个通用的 .danger-button 样式以备后用，但确保 header-action-button 的特异性更高 */
 .danger-button {
-    background-color: #b22222; /* 暗红色 */
+    background-color: #b22222; 
     color: white;
     padding: 12px 25px;
     border: none;

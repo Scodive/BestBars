@@ -10,10 +10,22 @@
 <body>
     <div class="container">
         <header>
-            <button id="prev-month" class="nav-button">&lt;</button>
-            <h1 id="month-year"></h1>
-            <button id="next-month" class="nav-button">&gt;</button>
+            <div class="month-navigation">
+                <button id="prev-month" class="nav-button">&lt;</button>
+                <h1 id="month-year"></h1>
+                <button id="next-month" class="nav-button">&gt;</button>
+            </div>
+            <button id="clear-all-button" class="header-action-button danger-button">全部清空</button>
         </header>
+        <div class="weekday-header-grid">
+            <div>一</div>
+            <div>二</div>
+            <div>三</div>
+            <div>四</div>
+            <div>五</div>
+            <div>六</div>
+            <div>日</div>
+        </div>
         <div id="calendar-grid" class="calendar-grid">
             <!-- 日历格子将由 JavaScript 动态生成 -->
         </div>
@@ -51,10 +63,6 @@
             <p id="details-modal-cocktail-recommendation"></p>
             <button id="delete-entry-button" class="modal-delete-button">删除记录</button>
         </div>
-    </div>
-
-    <div class="footer-actions">
-        <button id="clear-all-button" class="danger-button">全部清空</button>
     </div>
 
     <script src="script.js"></script>
