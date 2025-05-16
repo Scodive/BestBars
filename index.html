@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鸡尾酒与酒吧日历</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button id="prev-month" class="nav-button">&lt;</button>
+            <h1 id="month-year"></h1>
+            <button id="next-month" class="nav-button">&gt;</button>
+        </header>
+        <div id="calendar-grid" class="calendar-grid">
+            <!-- 日历格子将由 JavaScript 动态生成 -->
+        </div>
+    </div>
+
+    <div id="entry-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modal-date"></h2>
+            <div class="modal-body">
+                <div class="modal-image-container">
+                    <img id="modal-image-preview" src="#" alt="上传的图片" style="display:none;">
+                    <input type="file" id="modal-image-upload" accept="image/*">
+                    <label for="modal-image-upload" class="upload-label">上传图片</label>
+                </div>
+                <input type="text" id="modal-bar-name" placeholder="酒吧名称">
+                <input type="text" id="modal-bar-location" placeholder="酒吧位置">
+                <textarea id="modal-bar-description" placeholder="简短描述"></textarea>
+                <input type="text" id="modal-cocktail-recommendation" placeholder="鸡尾酒推荐">
+                <button id="save-entry">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="details-modal-date"></h2>
+            <img id="details-modal-image" src="#" alt="酒吧图片" style="max-width: 100%; height: auto; margin-bottom: 15px;">
+            <h3 id="details-modal-bar-name"></h3>
+            <p id="details-modal-bar-location"></p>
+            <p><strong>描述:</strong></p>
+            <p id="details-modal-bar-description"></p>
+            <p><strong>鸡尾酒推荐:</strong></p>
+            <p id="details-modal-cocktail-recommendation"></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

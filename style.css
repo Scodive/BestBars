@@ -1,0 +1,258 @@
+body {
+    font-family: 'Roboto', Helvetica, Arial, sans-serif;
+    margin: 0;
+    background: linear-gradient(to bottom right, #2c2c2c, #1a1a1a);
+    color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.container {
+    background-color: #222;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    max-width: 1200px;
+    border: 1px solid #444; 
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #c0a062; /* Soft gold accent */
+}
+
+#month-year {
+    font-size: 2.5em;
+    color: #e0c082; /* Soft gold */
+    font-weight: 300;
+    letter-spacing: 2px;
+}
+
+.nav-button {
+    background-color: transparent;
+    color: #c0a062; /* Soft gold */
+    border: 1px solid #c0a062;
+    padding: 10px 20px;
+    font-size: 1.5em;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.nav-button:hover {
+    background-color: #c0a062;
+    color: #222;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+}
+
+.calendar-day {
+    background-color: #333;
+    min-height: 150px;
+    border-radius: 8px;
+    padding: 10px;
+    box-sizing: border-box;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    overflow: hidden;
+    border: 1px solid #444;
+}
+
+.calendar-day:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+}
+
+.calendar-day .day-number {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #e0c082; /* Soft gold */
+    margin-bottom: 5px;
+}
+
+.calendar-day .day-content {
+    font-size: 0.9em;
+}
+
+.calendar-day .bar-name-hover {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #e0c082;
+    padding: 8px;
+    font-size: 0.8em;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none; /* Allows click through to the day cell */
+}
+
+.calendar-day:hover .bar-name-hover {
+    opacity: 1;
+}
+
+.calendar-day.empty {
+    background-color: #282828;
+    cursor: default;
+}
+
+.calendar-day.has-entry .day-image-thumbnail {
+    width: 100%;
+    height: 100px; /* Adjust as needed */
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+/* Modal Styles */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.7); 
+    padding-top: 60px;
+}
+
+.modal-content {
+    background-color: #2a2a2a;
+    margin: 5% auto;
+    padding: 30px;
+    border: 1px solid #555;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    position: relative;
+    color: #f0f0f0;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    top: 15px;
+    right: 25px;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #c0a062; /* Soft gold */
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-body input[type="text"],
+.modal-body textarea,
+.modal-body input[type="file"] {
+    width: calc(100% - 22px); /* Account for padding and border */
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #555;
+    background-color: #333;
+    color: #f0f0f0;
+    font-size: 1em;
+}
+
+.modal-body textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.modal-body .upload-label {
+    display: block;
+    padding: 10px 15px;
+    background-color: #c0a062; /* Soft gold */
+    color: #222;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    margin-bottom: 15px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.modal-body .upload-label:hover {
+    background-color: #ad8d50;
+}
+
+.modal-body input[type="file"] {
+    display: none; /* Hide the default file input */
+}
+
+#modal-image-preview {
+    max-width: 100%;
+    max-height: 200px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    display: block; /* Initially none, will be block when image is loaded */
+    object-fit: cover;
+}
+
+.modal-body button {
+    background-color: #c0a062; /* Soft gold */
+    color: #222;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.3s;
+    width: 100%;
+}
+
+.modal-body button:hover {
+    background-color: #ad8d50;
+}
+
+#details-modal img {
+    border-radius: 5px;
+}
+
+#details-modal h3 {
+    color: #e0c082; /* Soft gold */
+    margin-top: 0;
+}
+
+#details-modal p {
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+/* Ensure day content is not obscured by hover initially */
+.day-entry-summary {
+    font-size: 0.8em;
+    color: #ccc;
+    max-height: 60px; /* Adjust as needed */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.day-entry-summary .entry-bar-name {
+    font-weight: bold;
+    color: #e0c082;
+} 
