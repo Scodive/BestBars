@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailsModalBarLocation = document.getElementById('details-modal-bar-location');
     const detailsModalBarDescription = document.getElementById('details-modal-bar-description');
     const detailsModalCocktailRecommendation = document.getElementById('details-modal-cocktail-recommendation');
+    const deleteEntryButton = document.getElementById('delete-entry-button');
+    const clearAllButton = document.getElementById('clear-all-button');
 
     let currentDate = new Date();
     let currentEditingDate = null; // Stores YYYY-MM-DD of the day being edited
@@ -152,28 +154,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
     saveEntryButton.addEventListener('click', () => {
         if (!currentEditingDate) return;
+        const dateToSave = currentEditingDate; // Capture for use after modal closes
 
         const entryData = {
-            image: modalImagePreview.src.startsWith('data:image') ? modalImagePreview.src : (calendarData[currentEditingDate]?.image || null) ,
+            image: modalImagePreview.src.startsWith('data:image') ? modalImagePreview.src : (calendarData[dateToSave]?.image || null) ,
             barName: modalBarNameInput.value.trim(),
             barLocation: modalBarLocationInput.value.trim(),
             description: modalBarDescriptionInput.value.trim(),
             cocktail: modalCocktailRecommendationInput.value.trim(),
         };
 
-        if (entryData.barName || entryData.barLocation || entryData.description || entryData.cocktail || entryData.image) {
-            calendarData[currentEditingDate] = entryData;
+        // Only save/update if there's meaningful data or an image
+        if (entryData.barName || entryData.barLocation || entryData.description || entryData.cocktail || (entryData.image && entryData.image !== '#')) {
+            calendarData[dateToSave] = entryData;
         } else {
-            // If all fields are empty and no new image, consider deleting the entry
-             if (calendarData[currentEditingDate] && !entryData.image) { // only delete if no new image either
-                delete calendarData[currentEditingDate];
-             }
+            // If all fields are empty and no new/existing image, delete the entry
+            if (calendarData[dateToSave]) { 
+                delete calendarData[dateToSave];
+            }
         }
         
         saveCalendarData();
         renderCalendar();
         entryModal.style.display = 'none';
-        currentEditingDate = null;
+        // currentEditingDate = null; // Do not nullify here if save is also used for edit from details
+    });
+
+    deleteEntryButton.addEventListener('click', () => {
+        if (currentEditingDate && calendarData[currentEditingDate]) {
+            if (confirm('您确定要删除这条记录吗？')) {
+                delete calendarData[currentEditingDate];
+                saveCalendarData();
+                renderCalendar();
+                detailsModal.style.display = 'none';
+                currentEditingDate = null;
+            }
+        }
+    });
+
+    clearAllButton.addEventListener('click', () => {
+        if (confirm('您确定要清空所有日历记录吗？此操作无法撤销。')) {
+            calendarData = {};
+            saveCalendarData();
+            renderCalendar();
+            alert('所有记录已清空。');
+        }
     });
 
     closeButtons.forEach(button => {

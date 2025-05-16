@@ -17,7 +17,7 @@ body {
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     width: 100%;
-    max-width: 1200px;
+    max-width: 960px;
     border: 1px solid #444; 
 }
 
@@ -255,4 +255,44 @@ header {
 .day-entry-summary .entry-bar-name {
     font-weight: bold;
     color: #e0c082;
+}
+
+.modal-delete-button {
+    background-color: #d9534f; /* 红色，表示危险操作 */
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: bold;
+    transition: background-color 0.3s;
+    margin-top: 20px; /* 与上方内容隔开 */
+    display: block; /* 使其独占一行或根据需要调整 */
+    width: auto; /* 或 100% 如果需要撑满 */
+}
+
+.modal-delete-button:hover {
+    background-color: #c9302c;
+}
+
+.footer-actions {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.danger-button {
+    background-color: #b22222; /* 暗红色 */
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.danger-button:hover {
+    background-color: #8f1c1c;
 } 
