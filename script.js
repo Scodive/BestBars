@@ -605,14 +605,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Ensure map container is visible and has a size *before* initializing the map
-        // This is typically handled by setActivePage, but we can double check here.
-        if (mapContainer.offsetParent === null) { // Checks if the element or its parents are hidden
+        if (mapContainer.offsetParent === null) { 
              console.warn("Map container is not visible. Map might not render correctly if initialized now.");
-            // Consider deferring initialization or ensuring it's visible via setActivePage first.
-            // For now, we'll proceed, but this could be an issue.
         }
         
-        if (top50Map) { // If map already exists, just invalidate size and update markers
+        if (top50Map) { 
             console.log("Map already initialized. Invalidating size and updating markers.");
             top50Map.invalidateSize();
             updateMapMarkers();
@@ -621,16 +618,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log("Initializing new map instance.");
         try {
-            top50Map = L.map(mapContainer).setView([20, 110], 3); // Default view
+            top50Map = L.map(mapContainer).setView([20, 110], 3); 
 
-            L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png', {
+            L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png?api_key=37dbd568-c292-4be1-82a6-a38e6b3b105e', {
                 maxZoom: 18,
                 attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
-                subdomains: 'abcd' // Not strictly necessary for Stadia, but good practice for some tile servers
+                subdomains: 'abcd' 
             }).addTo(top50Map);
 
-            console.log("Map initialized and tileLayer added.");
-            updateMapMarkers(); // Add initial markers
+            console.log("Map initialized and tileLayer added with API key.");
+            updateMapMarkers(); 
 
         } catch (error) {
             console.error("Error initializing Leaflet map:", error);
