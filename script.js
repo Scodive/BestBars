@@ -158,10 +158,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 const entry = calendarData[dateKey];
 
                 if (entry.images && entry.images.length > 0) {
+                    const imageContainer = document.createElement('div');
+                    imageContainer.style.position = 'relative';
+
                     const thumbnail = document.createElement('img');
                     thumbnail.src = entry.images[0];
                     thumbnail.classList.add('day-image-thumbnail');
-                    dayContent.appendChild(thumbnail);
+                    imageContainer.appendChild(thumbnail);
+
+                    if (entry.images.length > 1) {
+                        const multiImageIcon = document.createElement('span');
+                        multiImageIcon.textContent = `+${entry.images.length - 1}`;
+                        multiImageIcon.style.position = 'absolute';
+                        multiImageIcon.style.top = '5px';
+                        multiImageIcon.style.right = '5px';
+                        multiImageIcon.style.background = 'rgba(0,0,0,0.7)';
+                        multiImageIcon.style.color = 'white';
+                        multiImageIcon.style.padding = '2px 5px';
+                        multiImageIcon.style.borderRadius = '3px';
+                        multiImageIcon.style.fontSize = '0.7em';
+                        multiImageIcon.style.pointerEvents = 'none';
+                        imageContainer.appendChild(multiImageIcon);
+                    }
+                    dayContent.appendChild(imageContainer);
                 }
                 const summary = document.createElement('div');
                 summary.classList.add('day-entry-summary');
